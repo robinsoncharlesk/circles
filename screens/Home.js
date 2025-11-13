@@ -1,11 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Animated } from 'react-native';
+import OpenHangoutToggle from '../components/OpenHangoutToggle';
 
 /**
  * HOME SCREEN
  *
  * The main screen showing all circles.
  * Users tap a circle to navigate to that circle's feed.
+ *
+ * Features the signature 'Open Hangout' toggle - our solution to
+ * the "asking to hang out feels like a burden" problem.
  */
 
 /**
@@ -13,11 +17,15 @@ import { StyleSheet, Text, View, TouchableOpacity, Animated } from 'react-native
  *
  * Each circle breathes independently with its own timing.
  * The animation scales from 1.0 (normal) to 1.08 (slightly bigger) and back.
- * Think of it like a gentle inhale and exhale - calming, not jarring.
+ *
+ * When Open Hangout is active, the Friends circle gets a special sparkle/glow.
+ * This signals availability without the pressure of directly asking.
  */
-function BreathingCircle({ circle, delay, onPress }) {
+function BreathingCircle({ circle, delay, onPress, isOpenHangout, theme }) {
   const breathAnim = useRef(new Animated.Value(1)).current;
+  const glowAnim = useRef(new Animated.Value(0)).current;
 
+  // Standard breathing animation
   useEffect(() => {
     const breathe = Animated.loop(
       Animated.sequence([
@@ -44,26 +52,89 @@ function BreathingCircle({ circle, delay, onPress }) {
     };
   }, [breathAnim, delay]);
 
+  // Sparkle glow animation for Friends circle when Open Hangout is active
+  useEffect(() => {
+    const isFriendsCircle = circle.name === 'Friends';
+
+    if (isFriendsCircle && isOpenHangout) {
+      // Start the sparkle glow animation
+      const glow = Animated.loop(
+        Animated.sequence([
+          Animated.timing(glowAnim, {
+            toValue: 1,
+            duration: 1500,
+            useNativeDriver: false, // Can't use native driver for shadow props
+          }),
+          Animated.timing(glowAnim, {
+            toValue: 0,
+            duration: 1500,
+            useNativeDriver: false,
+          }),
+        ])
+      );
+      glow.start();
+
+      return () => glow.stop();
+    } else {
+      // Reset glow when toggled off
+      glowAnim.setValue(0);
+    }
+  }, [isOpenHangout, circle.name, glowAnim]);
+
+  const isFriendsCircle = circle.name === 'Friends';
+  const showGlow = isFriendsCircle && isOpenHangout;
+
+  // Interpolate glow values for shadow
+  const shadowOpacity = showGlow
+    ? glowAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0.1, 0.5],
+      })
+    : 0.1;
+
+  const shadowRadius = showGlow
+    ? glowAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [4, 16],
+      })
+    : 4;
+
   return (
     <Animated.View
       style={{
         transform: [{ scale: breathAnim }],
       }}
     >
-      <TouchableOpacity
-        style={[styles.circle, { backgroundColor: circle.color }]}
-        onPress={onPress}
-        activeOpacity={0.7}
+      <Animated.View
+        style={[
+          styles.circleWrapper,
+          showGlow && {
+            shadowColor: theme.prompt, // Use theme color for glow
+            shadowOpacity: shadowOpacity,
+            shadowRadius: shadowRadius,
+            shadowOffset: { width: 0, height: 0 },
+            elevation: showGlow ? 12 : 0,
+          },
+        ]}
       >
-        <Text style={styles.emoji}>{circle.emoji}</Text>
-        <Text style={styles.circleName}>{circle.name}</Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.circle, { backgroundColor: circle.color }]}
+          onPress={onPress}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.emoji}>{circle.emoji}</Text>
+          <Text style={styles.circleName}>{circle.name}</Text>
+        </TouchableOpacity>
+      </Animated.View>
     </Animated.View>
   );
 }
 
 export default function Home({ navigation, theme }) {
   const circles = theme.circles;
+
+  // State for Open Hangout toggle
+  const [isOpenHangout, setIsOpenHangout] = useState(false);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -88,10 +159,19 @@ export default function Home({ navigation, theme }) {
               circle={circle}
               delay={index * 600}
               onPress={() => navigation.navigate('CircleFeed', { circle })}
+              isOpenHangout={isOpenHangout}
+              theme={theme}
             />
           ))}
         </View>
       </View>
+
+      {/* Open Hangout Toggle - our signature feature */}
+      <OpenHangoutToggle
+        isOpen={isOpenHangout}
+        onToggle={() => setIsOpenHangout(!isOpenHangout)}
+        theme={theme}
+      />
 
       {/* Footer with your philosophy */}
       <View style={styles.footer}>
@@ -137,6 +217,9 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     justifyContent: 'center',
     gap: 20,
+  },
+  circleWrapper: {
+    borderRadius: 70,
   },
   circle: {
     width: 140,
