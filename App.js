@@ -1,11 +1,16 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, StatusBar, Animated } from 'react-native';
+import React from 'react';
+import { StatusBar } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+
+import Home from './screens/Home';
+import CircleFeed from './screens/CircleFeed';
 
 /**
  * CIRCLES - A Mindful Social Media App
  *
- * This is your starting point. Every app needs a main component - this is it.
- * Think of this like the front door to your app.
+ * This is your navigation structure - the map of your app.
+ * Users can navigate between the home screen and individual circle feeds.
  */
 
 /**
@@ -88,225 +93,38 @@ function getTimeOfDay() {
   }
 }
 
-/**
- * BREATHING CIRCLE COMPONENT
- *
- * Each circle breathes independently with its own timing.
- * The animation scales from 1.0 (normal) to 1.08 (slightly bigger) and back.
- * Think of it like a gentle inhale and exhale - calming, not jarring.
- */
-function BreathingCircle({ circle, delay, onPress, isSelected }) {
-  // useRef holds values that persist between renders
-  // This is the animated value that will control the scale
-  const breathAnim = useRef(new Animated.Value(1)).current;
-
-  useEffect(() => {
-    // Create the breathing animation sequence
-    const breathe = Animated.loop(
-      Animated.sequence([
-        // Breathe in - scale up to 1.08 over 1.8 seconds
-        Animated.timing(breathAnim, {
-          toValue: 1.08,
-          duration: 1800,
-          useNativeDriver: true, // Better performance
-        }),
-        // Breathe out - scale back to 1.0 over 1.8 seconds
-        Animated.timing(breathAnim, {
-          toValue: 1.0,
-          duration: 1800,
-          useNativeDriver: true,
-        }),
-      ])
-    );
-
-    // Add the stagger delay before starting
-    // Each circle starts at a different time for organic feel
-    const timer = setTimeout(() => {
-      breathe.start();
-    }, delay);
-
-    // Cleanup: stop animation if component unmounts
-    return () => {
-      clearTimeout(timer);
-      breathe.stop();
-    };
-  }, [breathAnim, delay]);
-
-  return (
-    <Animated.View
-      style={{
-        transform: [{ scale: breathAnim }], // Apply the breathing scale
-      }}
-    >
-      <TouchableOpacity
-        style={[styles.circle, { backgroundColor: circle.color }]}
-        onPress={onPress}
-        activeOpacity={0.7}
-      >
-        <Text style={styles.emoji}>{circle.emoji}</Text>
-        <Text style={styles.circleName}>{circle.name}</Text>
-      </TouchableOpacity>
-    </Animated.View>
-  );
-}
+// Create the navigation stack
+const Stack = createNativeStackNavigator();
 
 export default function App() {
-  // This tracks which circle you're viewing
-  const [selectedCircle, setSelectedCircle] = useState(null);
-
-  // Detect the time of day and get the appropriate theme
+  // Get the current theme based on time of day
   const timeOfDay = getTimeOfDay();
   const theme = COLOR_THEMES[timeOfDay];
 
-  // Your circles now use colors from the current theme
-  const circles = theme.circles;
-
   return (
-    <View style={[styles.container, { backgroundColor: theme.background }]}>
-      {/* StatusBar controls the top bar of your phone - changes based on time */}
+    <>
+      {/* StatusBar adapts to time of day */}
       <StatusBar barStyle={theme.statusBar} />
 
-      {/* App Header */}
-      <View style={styles.header}>
-        <Text style={[styles.title, { color: theme.title }]}>Circles</Text>
-        <Text style={[styles.subtitle, { color: theme.subtitle }]}>Connect mindfully</Text>
-      </View>
+      {/* Navigation container wraps all screens */}
+      <NavigationContainer>
+        <Stack.Navigator
+          screenOptions={{
+            headerShown: false, // We use custom headers for our calm aesthetic
+            animation: 'fade', // Gentle transitions, not jarring slides
+          }}
+        >
+          {/* Home screen - shows all circles */}
+          <Stack.Screen name="Home">
+            {(props) => <Home {...props} theme={theme} />}
+          </Stack.Screen>
 
-      {/* The main circles display */}
-      <View style={styles.circlesContainer}>
-        <Text style={[styles.prompt, { color: theme.prompt }]}>Choose a circle to connect</Text>
-
-        <View style={styles.circleGrid}>
-          {circles.map((circle, index) => (
-            <BreathingCircle
-              key={circle.id}
-              circle={circle}
-              delay={index * 600} // Stagger each circle by 600ms for organic feel
-              onPress={() => setSelectedCircle(circle)}
-              isSelected={selectedCircle?.id === circle.id}
-            />
-          ))}
-        </View>
-
-        {/* Show selected circle feedback */}
-        {selectedCircle && (
-          <View style={[styles.selectedInfo, { backgroundColor: theme.selectedBg }]}>
-            <Text style={[styles.selectedText, { color: theme.title }]}>
-              You selected: {selectedCircle.emoji} {selectedCircle.name}
-            </Text>
-            <Text style={[styles.comingSoon, { color: theme.footer }]}>
-              (Circle feed coming soon!)
-            </Text>
-          </View>
-        )}
-      </View>
-
-      {/* Footer with your philosophy */}
-      <View style={styles.footer}>
-        <Text style={[styles.footerText, { color: theme.footer }]}>
-          No likes. No ads. Just real connections.
-        </Text>
-      </View>
-    </View>
+          {/* Circle feed screen - shows posts for a specific circle */}
+          <Stack.Screen name="CircleFeed">
+            {(props) => <CircleFeed {...props} theme={theme} />}
+          </Stack.Screen>
+        </Stack.Navigator>
+      </NavigationContainer>
+    </>
   );
 }
-
-/**
- * STYLES
- *
- * Now simplified - colors come from the time-based theme!
- * These styles just define sizes, spacing, and structure.
- */
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    // backgroundColor is now dynamic (from theme)
-    paddingTop: 60,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  title: {
-    fontSize: 42,
-    fontWeight: '300', // Light weight = calm, not aggressive
-    // color is now dynamic (from theme)
-    letterSpacing: 2,
-  },
-  subtitle: {
-    fontSize: 16,
-    // color is now dynamic (from theme)
-    marginTop: 8,
-    fontWeight: '300',
-  },
-  circlesContainer: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  prompt: {
-    fontSize: 18,
-    // color is now dynamic (from theme)
-    textAlign: 'center',
-    marginBottom: 30,
-    fontWeight: '300',
-  },
-  circleGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: 20,
-  },
-  circle: {
-    width: 140,
-    height: 140,
-    borderRadius: 70, // Makes it circular
-    justifyContent: 'center',
-    alignItems: 'center',
-    // Subtle shadow for depth
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  emoji: {
-    fontSize: 40,
-    marginBottom: 8,
-  },
-  circleName: {
-    fontSize: 14,
-    color: '#fff',
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-  selectedInfo: {
-    marginTop: 40,
-    alignItems: 'center',
-    padding: 20,
-    // backgroundColor is now dynamic (from theme)
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 3,
-  },
-  selectedText: {
-    fontSize: 18,
-    // color is now dynamic (from theme)
-    marginBottom: 8,
-  },
-  comingSoon: {
-    fontSize: 14,
-    // color is now dynamic (from theme)
-    fontStyle: 'italic',
-  },
-  footer: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  footerText: {
-    fontSize: 14,
-    // color is now dynamic (from theme)
-    fontStyle: 'italic',
-  },
-});
