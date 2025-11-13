@@ -9,12 +9,15 @@ import {
 } from 'react-native';
 import PostCreationModal from '../components/PostCreationModal';
 import PostItem from '../components/PostItem';
+import { loadPosts, savePosts } from '../utils/storage';
 
 /**
  * CIRCLE FEED SCREEN
  *
  * This is where users see posts from a specific circle and can create new ones.
  * It feels like a shared journal with close friends, not a broadcast platform.
+ *
+ * Now with local persistence - your posts and comments survive app restarts!
  */
 
 /**
@@ -73,6 +76,27 @@ export default function CircleFeed({ route, navigation, theme }) {
 
   // State for which post is expanded (null if none)
   const [expandedPostId, setExpandedPostId] = useState(null);
+
+  // State for tracking if posts have been loaded from storage
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  // Load posts from storage when component mounts
+  useEffect(() => {
+    async function loadStoredPosts() {
+      const storedPosts = await loadPosts(circle.name);
+      setPosts(storedPosts);
+      setIsLoaded(true);
+    }
+
+    loadStoredPosts();
+  }, [circle.name]);
+
+  // Save posts to storage whenever they change (but only after initial load)
+  useEffect(() => {
+    if (isLoaded) {
+      savePosts(circle.name, posts);
+    }
+  }, [posts, circle.name, isLoaded]);
 
   // Handle creating a new post
   const handleCreatePost = (text) => {
