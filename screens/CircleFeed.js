@@ -71,6 +71,9 @@ export default function CircleFeed({ route, navigation, theme }) {
   // State for post creation modal
   const [isModalVisible, setIsModalVisible] = useState(false);
 
+  // State for which post is expanded (null if none)
+  const [expandedPostId, setExpandedPostId] = useState(null);
+
   // Handle creating a new post
   const handleCreatePost = (text) => {
     const newPost = {
@@ -78,10 +81,34 @@ export default function CircleFeed({ route, navigation, theme }) {
       text: text,
       timestamp: new Date().toISOString(),
       author: 'You',
+      comments: [], // Initialize empty comments array
     };
 
     // Add to beginning of posts array (newest first)
     setPosts([newPost, ...posts]);
+  };
+
+  // Handle toggling post expansion
+  const handleToggleExpand = (postId) => {
+    setExpandedPostId(expandedPostId === postId ? null : postId);
+  };
+
+  // Handle adding a comment to a post
+  const handleAddComment = (postId, commentText) => {
+    const newComment = {
+      id: Date.now().toString(),
+      text: commentText,
+      timestamp: new Date().toISOString(),
+      author: 'You',
+    };
+
+    setPosts(
+      posts.map((post) =>
+        post.id === postId
+          ? { ...post, comments: [...(post.comments || []), newComment] }
+          : post
+      )
+    );
   };
 
   return (
@@ -133,7 +160,14 @@ export default function CircleFeed({ route, navigation, theme }) {
           // Posts list
           <View style={styles.postsList}>
             {posts.map((post) => (
-              <PostItem key={post.id} post={post} theme={theme} />
+              <PostItem
+                key={post.id}
+                post={post}
+                theme={theme}
+                isExpanded={expandedPostId === post.id}
+                onToggleExpand={() => handleToggleExpand(post.id)}
+                onAddComment={(commentText) => handleAddComment(post.id, commentText)}
+              />
             ))}
           </View>
         )}
