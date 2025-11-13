@@ -1,11 +1,20 @@
-import React, { useEffect, useRef } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, Animated } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  StyleSheet,
+  Text,
+  View,
+  TouchableOpacity,
+  Animated,
+  ScrollView,
+} from 'react-native';
+import PostCreationModal from '../components/PostCreationModal';
+import PostItem from '../components/PostItem';
 
 /**
  * CIRCLE FEED SCREEN
  *
- * This is where users see posts from a specific circle.
- * For now, it shows an empty state, but this is where content will live.
+ * This is where users see posts from a specific circle and can create new ones.
+ * It feels like a shared journal with close friends, not a broadcast platform.
  */
 
 /**
@@ -56,6 +65,25 @@ export default function CircleFeed({ route, navigation, theme }) {
   // Get the circle data passed from home screen
   const { circle } = route.params;
 
+  // State for posts in this circle
+  const [posts, setPosts] = useState([]);
+
+  // State for post creation modal
+  const [isModalVisible, setIsModalVisible] = useState(false);
+
+  // Handle creating a new post
+  const handleCreatePost = (text) => {
+    const newPost = {
+      id: Date.now().toString(),
+      text: text,
+      timestamp: new Date().toISOString(),
+      author: 'You',
+    };
+
+    // Add to beginning of posts array (newest first)
+    setPosts([newPost, ...posts]);
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       {/* Header with back button */}
@@ -69,38 +97,65 @@ export default function CircleFeed({ route, navigation, theme }) {
         </TouchableOpacity>
 
         <View style={styles.headerContent}>
-          <Text style={[styles.headerEmoji]}>{circle.emoji}</Text>
+          <Text style={styles.headerEmoji}>{circle.emoji}</Text>
           <Text style={[styles.headerTitle, { color: theme.title }]}>
             {circle.name}
           </Text>
         </View>
 
-        {/* Spacer to center the title (invisible back button for balance) */}
+        {/* Spacer to center the title */}
         <View style={styles.backButton} />
       </View>
 
-      {/* Empty state - this is where posts will appear */}
-      <View style={styles.emptyState}>
-        <BreathingEmoji emoji={circle.emoji} />
+      {/* Posts feed or empty state */}
+      <ScrollView
+        style={styles.feedContainer}
+        contentContainerStyle={styles.feedContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {posts.length === 0 ? (
+          // Empty state
+          <View style={styles.emptyState}>
+            <BreathingEmoji emoji={circle.emoji} />
 
-        <Text style={[styles.emptyTitle, { color: theme.title }]}>
-          Start sharing with {circle.name}
-        </Text>
+            <Text style={[styles.emptyTitle, { color: theme.title }]}>
+              Start sharing with {circle.name}
+            </Text>
 
-        <Text style={[styles.emptySubtitle, { color: theme.subtitle }]}>
-          This is your space for meaningful connections.
-        </Text>
-        <Text style={[styles.emptySubtitle, { color: theme.subtitle }]}>
-          Posts will appear here.
-        </Text>
-      </View>
+            <Text style={[styles.emptySubtitle, { color: theme.subtitle }]}>
+              This is your space for meaningful connections.
+            </Text>
+            <Text style={[styles.emptySubtitle, { color: theme.subtitle }]}>
+              Tap below to share your first thought.
+            </Text>
+          </View>
+        ) : (
+          // Posts list
+          <View style={styles.postsList}>
+            {posts.map((post) => (
+              <PostItem key={post.id} post={post} theme={theme} />
+            ))}
+          </View>
+        )}
+      </ScrollView>
 
-      {/* Future: Add post button will go here */}
-      <View style={styles.footer}>
-        <Text style={[styles.footerHint, { color: theme.footer }]}>
-          Post creation coming soon
-        </Text>
-      </View>
+      {/* Floating 'Share Something' button */}
+      <TouchableOpacity
+        style={[styles.floatingButton, { backgroundColor: circle.color }]}
+        onPress={() => setIsModalVisible(true)}
+        activeOpacity={0.8}
+      >
+        <Text style={styles.floatingButtonText}>✏️ Share Something</Text>
+      </TouchableOpacity>
+
+      {/* Post creation modal */}
+      <PostCreationModal
+        visible={isModalVisible}
+        onClose={() => setIsModalVisible(false)}
+        onPost={handleCreatePost}
+        theme={theme}
+        circleName={circle.name}
+      />
     </View>
   );
 }
@@ -140,11 +195,18 @@ const styles = StyleSheet.create({
     fontWeight: '300',
     letterSpacing: 1,
   },
+  feedContainer: {
+    flex: 1,
+  },
+  feedContent: {
+    flexGrow: 1,
+  },
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 40,
+    paddingBottom: 100, // Space for floating button
   },
   emptyEmoji: {
     fontSize: 80,
@@ -162,12 +224,29 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 24,
   },
-  footer: {
+  postsList: {
     padding: 20,
-    alignItems: 'center',
+    paddingBottom: 100, // Space for floating button
   },
-  footerHint: {
-    fontSize: 14,
-    fontStyle: 'italic',
+  floatingButton: {
+    position: 'absolute',
+    bottom: 30,
+    left: 20,
+    right: 20,
+    paddingVertical: 18,
+    borderRadius: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  floatingButtonText: {
+    fontSize: 17,
+    fontWeight: '500',
+    color: '#FFF',
+    letterSpacing: 0.5,
   },
 });
