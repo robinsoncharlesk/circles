@@ -65,8 +65,11 @@ function BreathingEmoji({ emoji }) {
 }
 
 export default function CircleFeed({ route, navigation, theme }) {
-  // Get the circle data passed from home screen
-  const { circle } = route.params;
+  // Get the circle data and hangout settings passed from home screen
+  const { circle, hangoutSettings } = route.params;
+
+  // Check if you're "open" to this circle
+  const isOpenToThis = hangoutSettings?.circles?.includes(circle.name);
 
   // State for posts in this circle
   const [posts, setPosts] = useState([]);
@@ -164,6 +167,23 @@ export default function CircleFeed({ route, navigation, theme }) {
         contentContainerStyle={styles.feedContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* Availability banner when you're "open" to this circle */}
+        {isOpenToThis && (
+          <View style={[styles.availabilityBanner, { backgroundColor: circle.color }]}>
+            <Text style={styles.availabilityEmoji}>✨</Text>
+            <View style={styles.availabilityTextContainer}>
+              <Text style={styles.availabilityTitle}>
+                You're open to hangout with {circle.name}
+              </Text>
+              {hangoutSettings.message && (
+                <Text style={styles.availabilityMessage}>
+                  "{hangoutSettings.message}"
+                </Text>
+              )}
+            </View>
+          </View>
+        )}
+
         {posts.length === 0 ? (
           // Empty state
           <View style={styles.emptyState}>
@@ -306,5 +326,39 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#FFF',
     letterSpacing: 0.5,
+  },
+  availabilityBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    marginHorizontal: 20,
+    marginTop: 8,
+    marginBottom: 16,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  availabilityEmoji: {
+    fontSize: 28,
+    marginRight: 12,
+  },
+  availabilityTextContainer: {
+    flex: 1,
+  },
+  availabilityTitle: {
+    fontSize: 15,
+    fontWeight: '500',
+    color: '#FFF',
+    marginBottom: 4,
+  },
+  availabilityMessage: {
+    fontSize: 14,
+    fontWeight: '300',
+    color: '#FFF',
+    fontStyle: 'italic',
+    opacity: 0.95,
   },
 });

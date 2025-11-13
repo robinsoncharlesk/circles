@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Animated } from 'react-native';
 import OpenHangoutToggle from '../components/OpenHangoutToggle';
+import OpenHangoutModal from '../components/OpenHangoutModal';
 
 /**
  * HOME SCREEN
@@ -10,6 +11,7 @@ import OpenHangoutToggle from '../components/OpenHangoutToggle';
  *
  * Features the signature 'Open Hangout' toggle - our solution to
  * the "asking to hang out feels like a burden" problem.
+ * Now enhanced with circle selection and optional context messages.
  */
 
 /**
@@ -18,10 +20,10 @@ import OpenHangoutToggle from '../components/OpenHangoutToggle';
  * Each circle breathes independently with its own timing.
  * The animation scales from 1.0 (normal) to 1.08 (slightly bigger) and back.
  *
- * When Open Hangout is active, the Friends circle gets a special sparkle/glow.
+ * When Open Hangout is active for this circle, it gets a sparkle/glow.
  * This signals availability without the pressure of directly asking.
  */
-function BreathingCircle({ circle, delay, onPress, isOpenHangout, theme }) {
+function BreathingCircle({ circle, delay, onPress, hangoutSettings, theme }) {
   const breathAnim = useRef(new Animated.Value(1)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
 
@@ -52,11 +54,11 @@ function BreathingCircle({ circle, delay, onPress, isOpenHangout, theme }) {
     };
   }, [breathAnim, delay]);
 
-  // Sparkle glow animation for Friends circle when Open Hangout is active
+  // Sparkle glow animation when this circle is selected for Open Hangout
   useEffect(() => {
-    const isFriendsCircle = circle.name === 'Friends';
+    const isSelected = hangoutSettings?.circles?.includes(circle.name);
 
-    if (isFriendsCircle && isOpenHangout) {
+    if (isSelected) {
       // Start the sparkle glow animation
       const glow = Animated.loop(
         Animated.sequence([
@@ -79,10 +81,10 @@ function BreathingCircle({ circle, delay, onPress, isOpenHangout, theme }) {
       // Reset glow when toggled off
       glowAnim.setValue(0);
     }
-  }, [isOpenHangout, circle.name, glowAnim]);
+  }, [hangoutSettings, circle.name, glowAnim]);
 
-  const isFriendsCircle = circle.name === 'Friends';
-  const showGlow = isFriendsCircle && isOpenHangout;
+  const isSelected = hangoutSettings?.circles?.includes(circle.name);
+  const showGlow = isSelected;
 
   // Interpolate glow values for shadow
   const shadowOpacity = showGlow
@@ -133,8 +135,22 @@ function BreathingCircle({ circle, delay, onPress, isOpenHangout, theme }) {
 export default function Home({ navigation, theme }) {
   const circles = theme.circles;
 
-  // State for Open Hangout toggle
-  const [isOpenHangout, setIsOpenHangout] = useState(false);
+  // State for Open Hangout settings (which circles, optional message)
+  const [hangoutSettings, setHangoutSettings] = useState({
+    circles: [],
+    message: '',
+  });
+
+  // State for modal visibility
+  const [isModalVisible, setIsModalVisible] = useState(false);
+
+  const handleSaveHangoutSettings = (settings) => {
+    setHangoutSettings(settings);
+  };
+
+  const handleOpenModal = () => {
+    setIsModalVisible(true);
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -158,8 +174,10 @@ export default function Home({ navigation, theme }) {
               key={circle.id}
               circle={circle}
               delay={index * 600}
-              onPress={() => navigation.navigate('CircleFeed', { circle })}
-              isOpenHangout={isOpenHangout}
+              onPress={() =>
+                navigation.navigate('CircleFeed', { circle, hangoutSettings })
+              }
+              hangoutSettings={hangoutSettings}
               theme={theme}
             />
           ))}
@@ -168,9 +186,19 @@ export default function Home({ navigation, theme }) {
 
       {/* Open Hangout Toggle - our signature feature */}
       <OpenHangoutToggle
-        isOpen={isOpenHangout}
-        onToggle={() => setIsOpenHangout(!isOpenHangout)}
+        hangoutSettings={hangoutSettings}
+        onPress={handleOpenModal}
         theme={theme}
+      />
+
+      {/* Open Hangout Modal */}
+      <OpenHangoutModal
+        visible={isModalVisible}
+        onClose={() => setIsModalVisible(false)}
+        onSave={handleSaveHangoutSettings}
+        initialSettings={hangoutSettings}
+        theme={theme}
+        availableCircles={circles}
       />
 
       {/* Footer with your philosophy */}
