@@ -16,6 +16,7 @@ import CircleFeed from './screens/CircleFeed';
 /**
  * TIME-BASED COLOR PALETTES
  *
+ * Enhanced with more vibrant, saturated colors for better visual appeal.
  * The app changes its entire color scheme based on the time of day.
  * This respects your natural circadian rhythms - bright in the day, calm at night.
  */
@@ -23,16 +24,16 @@ const COLOR_THEMES = {
   morning: {
     name: 'Morning',
     timeRange: '5am - 12pm',
-    background: '#FAF7F2', // Soft cream, like early light
-    title: '#5D4E3F', // Warm brown
-    subtitle: '#8B7B6B', // Muted taupe
-    prompt: '#6B5D52', // Gentle brown
-    footer: '#A89888', // Soft gray-brown
+    background: '#FBF8F3', // Softer cream
+    title: '#3D2E1F', // Richer dark brown - better contrast
+    subtitle: '#6B5D52', // Warmer mid-tone
+    prompt: '#5D4E3F', // Deeper brown
+    footer: '#8B7B6B', // Muted but readable
     circles: [
-      { id: 1, name: 'Inner Circle', color: '#B8D4C8', emoji: '🌿' }, // Soft sage - morning dew
-      { id: 2, name: 'Family', color: '#E6C4B8', emoji: '❤️' }, // Peachy pink - sunrise warmth
-      { id: 3, name: 'Friends', color: '#D4E0E8', emoji: '🌟' }, // Soft blue - morning sky
-      { id: 4, name: 'Work', color: '#E8D8C8', emoji: '💼' }, // Warm beige - fresh start
+      { id: 1, name: 'Inner Circle', color: '#7AC29A', emoji: '🌿' }, // More vibrant sage
+      { id: 2, name: 'Family', color: '#F4A89F', emoji: '❤️' }, // Richer peachy pink
+      { id: 3, name: 'Friends', color: '#A8C8E8', emoji: '🌟' }, // Brighter sky blue
+      { id: 4, name: 'Work', color: '#E8C89F', emoji: '💼' }, // Warmer golden beige
     ],
     selectedBg: '#FFFFFF',
     statusBar: 'dark-content',
@@ -40,16 +41,16 @@ const COLOR_THEMES = {
   afternoon: {
     name: 'Afternoon',
     timeRange: '12pm - 6pm',
-    background: '#F0F4F8', // Clear, bright blue-gray
-    title: '#2C3E50', // Deep slate blue
-    subtitle: '#5A6C7D', // Medium slate
-    prompt: '#4A5C6D', // Calm blue-gray
-    footer: '#7A8C9D', // Soft blue-gray
+    background: '#EBF2F8', // Clearer blue-white
+    title: '#1A2B3C', // Deeper slate - better contrast
+    subtitle: '#3D4E5F', // Richer mid-tone
+    prompt: '#2C3E50', // Stronger blue-gray
+    footer: '#5A6C7D', // More readable
     circles: [
-      { id: 1, name: 'Inner Circle', color: '#6B9B8A', emoji: '🌿' }, // Vibrant sage - full daylight
-      { id: 2, name: 'Family', color: '#C8968F', emoji: '❤️' }, // Warm terracotta
-      { id: 3, name: 'Friends', color: '#8BAED8', emoji: '🌟' }, // Clear sky blue
-      { id: 4, name: 'Work', color: '#B8A88F', emoji: '💼' }, // Golden tan
+      { id: 1, name: 'Inner Circle', color: '#4CAF7B', emoji: '🌿' }, // Vibrant emerald sage
+      { id: 2, name: 'Family', color: '#E8735F', emoji: '❤️' }, // Rich terracotta
+      { id: 3, name: 'Friends', color: '#5B9FD8', emoji: '🌟' }, // Bright sky blue
+      { id: 4, name: 'Work', color: '#D4A574', emoji: '💼' }, // Rich golden tan
     ],
     selectedBg: '#FFFFFF',
     statusBar: 'dark-content',
@@ -57,18 +58,18 @@ const COLOR_THEMES = {
   evening: {
     name: 'Evening',
     timeRange: '6pm - 5am',
-    background: '#2B2D3E', // Deep twilight blue
-    title: '#E8DDD0', // Warm cream
-    subtitle: '#B8ADA0', // Soft tan
-    prompt: '#C8BDB0', // Gentle beige
-    footer: '#8B8078', // Muted brown
+    background: '#1E2030', // Richer twilight
+    title: '#F5EBE0', // Warmer cream - better contrast
+    subtitle: '#C8B8A8', // Richer tan
+    prompt: '#D8C8B8', // Warmer beige
+    footer: '#9B8B7B', // More visible
     circles: [
-      { id: 1, name: 'Inner Circle', color: '#5A7B6B', emoji: '🌿' }, // Deep forest - night garden
-      { id: 2, name: 'Family', color: '#9B6B6B', emoji: '❤️' }, // Deep rose - warm hearth
-      { id: 3, name: 'Friends', color: '#6B7B9B', emoji: '🌟' }, // Twilight blue - evening stars
-      { id: 4, name: 'Work', color: '#9B8B6B', emoji: '💼' }, // Amber - winding down
+      { id: 1, name: 'Inner Circle', color: '#4A8B6B', emoji: '🌿' }, // Richer forest green
+      { id: 2, name: 'Family', color: '#C85B5B', emoji: '❤️' }, // Vibrant rose
+      { id: 3, name: 'Friends', color: '#5B7BC8', emoji: '🌟' }, // Rich twilight blue
+      { id: 4, name: 'Work', color: '#C89B4A', emoji: '💼' }, // Rich amber
     ],
-    selectedBg: '#3B3D4E',
+    selectedBg: '#2B2D40',
     statusBar: 'light-content',
   },
 };

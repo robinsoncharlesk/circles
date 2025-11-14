@@ -6,18 +6,32 @@ import {
   TouchableOpacity,
   Animated,
   ScrollView,
+  ActivityIndicator,
+  LayoutAnimation,
+  Platform,
+  UIManager,
 } from 'react-native';
 import PostCreationModal from '../components/PostCreationModal';
 import PostItem from '../components/PostItem';
 import { loadPosts, savePosts } from '../utils/storage';
 
+// Enable LayoutAnimation on Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
 /**
  * CIRCLE FEED SCREEN
  *
+ * Enhanced with smooth animations, loading states, and polished UX.
  * This is where users see posts from a specific circle and can create new ones.
  * It feels like a shared journal with close friends, not a broadcast platform.
  *
- * Now with local persistence - your posts and comments survive app restarts!
+ * Now with:
+ * - Local persistence (posts survive restarts)
+ * - Smooth fade-in animations
+ * - Loading states with spinners
+ * - Warm, encouraging empty states
  */
 
 /**
@@ -64,6 +78,35 @@ function BreathingEmoji({ emoji }) {
   );
 }
 
+/**
+ * Get warm, contextual empty state messages for each circle
+ */
+function getEmptyStateMessage(circleName) {
+  const messages = {
+    'Inner Circle': {
+      title: 'Your closest connections',
+      subtitle: 'Share what matters most with those who know you best.',
+    },
+    Family: {
+      title: 'Keep family connected',
+      subtitle: 'Share moments, thoughts, and love with those who raised you.',
+    },
+    Friends: {
+      title: 'Real friends, real conversations',
+      subtitle: 'Share life with people who get you.',
+    },
+    Work: {
+      title: 'Connect beyond the office',
+      subtitle: 'Build genuine relationships with colleagues.',
+    },
+  };
+
+  return messages[circleName] || {
+    title: `Start sharing with ${circleName}`,
+    subtitle: 'This is your space for meaningful connections.',
+  };
+}
+
 export default function CircleFeed({ route, navigation, theme }) {
   // Get the circle data and hangout settings passed from home screen
   const { circle, hangoutSettings } = route.params;
@@ -88,7 +131,11 @@ export default function CircleFeed({ route, navigation, theme }) {
     async function loadStoredPosts() {
       const storedPosts = await loadPosts(circle.name);
       setPosts(storedPosts);
-      setIsLoaded(true);
+
+      // Small delay before showing content for smooth transition
+      setTimeout(() => {
+        setIsLoaded(true);
+      }, 300);
     }
 
     loadStoredPosts();
@@ -101,8 +148,11 @@ export default function CircleFeed({ route, navigation, theme }) {
     }
   }, [posts, circle.name, isLoaded]);
 
-  // Handle creating a new post
+  // Handle creating a new post with animation
   const handleCreatePost = (text) => {
+    // Configure smooth layout animation
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+
     const newPost = {
       id: Date.now().toString(),
       text: text,
@@ -115,13 +165,16 @@ export default function CircleFeed({ route, navigation, theme }) {
     setPosts([newPost, ...posts]);
   };
 
-  // Handle toggling post expansion
+  // Handle toggling post expansion with animation
   const handleToggleExpand = (postId) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setExpandedPostId(expandedPostId === postId ? null : postId);
   };
 
-  // Handle adding a comment to a post
+  // Handle adding a comment to a post with animation
   const handleAddComment = (postId, commentText) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+
     const newComment = {
       id: Date.now().toString(),
       text: commentText,
@@ -137,6 +190,8 @@ export default function CircleFeed({ route, navigation, theme }) {
       )
     );
   };
+
+  const emptyMessage = getEmptyStateMessage(circle.name);
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -161,79 +216,100 @@ export default function CircleFeed({ route, navigation, theme }) {
         <View style={styles.backButton} />
       </View>
 
-      {/* Posts feed or empty state */}
-      <ScrollView
-        style={styles.feedContainer}
-        contentContainerStyle={styles.feedContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Availability banner when you're "open" to this circle */}
-        {isOpenToThis && (
-          <View style={[styles.availabilityBanner, { backgroundColor: circle.color }]}>
-            <Text style={styles.availabilityEmoji}>✨</Text>
-            <View style={styles.availabilityTextContainer}>
-              <Text style={styles.availabilityTitle}>
-                You're open to hangout with {circle.name}
-              </Text>
-              {hangoutSettings.message && (
-                <Text style={styles.availabilityMessage}>
-                  "{hangoutSettings.message}"
+      {/* Loading state */}
+      {!isLoaded ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={circle.color} />
+          <Text style={[styles.loadingText, { color: theme.subtitle }]}>
+            Loading your thoughts...
+          </Text>
+        </View>
+      ) : (
+        <>
+          {/* Posts feed or empty state */}
+          <ScrollView
+            style={styles.feedContainer}
+            contentContainerStyle={styles.feedContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Availability banner when you're "open" to this circle */}
+            {isOpenToThis && (
+              <View
+                style={[styles.availabilityBanner, { backgroundColor: circle.color }]}
+              >
+                <Text style={styles.availabilityEmoji}>✨</Text>
+                <View style={styles.availabilityTextContainer}>
+                  <Text style={styles.availabilityTitle}>
+                    You're open to hangout with {circle.name}
+                  </Text>
+                  {hangoutSettings.message && (
+                    <Text style={styles.availabilityMessage}>
+                      "{hangoutSettings.message}"
+                    </Text>
+                  )}
+                </View>
+              </View>
+            )}
+
+            {posts.length === 0 ? (
+              // Empty state
+              <View style={styles.emptyState}>
+                <BreathingEmoji emoji={circle.emoji} />
+
+                <Text style={[styles.emptyTitle, { color: theme.title }]}>
+                  {emptyMessage.title}
                 </Text>
-              )}
-            </View>
-          </View>
-        )}
 
-        {posts.length === 0 ? (
-          // Empty state
-          <View style={styles.emptyState}>
-            <BreathingEmoji emoji={circle.emoji} />
+                <Text style={[styles.emptySubtitle, { color: theme.subtitle }]}>
+                  {emptyMessage.subtitle}
+                </Text>
+                <Text
+                  style={[
+                    styles.emptySubtitle,
+                    { color: theme.subtitle, marginTop: 12 },
+                  ]}
+                >
+                  Tap the button below to share your first thought.
+                </Text>
+              </View>
+            ) : (
+              // Posts list
+              <View style={styles.postsList}>
+                {posts.map((post) => (
+                  <PostItem
+                    key={post.id}
+                    post={post}
+                    theme={theme}
+                    isExpanded={expandedPostId === post.id}
+                    onToggleExpand={() => handleToggleExpand(post.id)}
+                    onAddComment={(commentText) =>
+                      handleAddComment(post.id, commentText)
+                    }
+                  />
+                ))}
+              </View>
+            )}
+          </ScrollView>
 
-            <Text style={[styles.emptyTitle, { color: theme.title }]}>
-              Start sharing with {circle.name}
-            </Text>
+          {/* Floating 'Share Something' button */}
+          <TouchableOpacity
+            style={[styles.floatingButton, { backgroundColor: circle.color }]}
+            onPress={() => setIsModalVisible(true)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.floatingButtonText}>✏️ Share Something</Text>
+          </TouchableOpacity>
 
-            <Text style={[styles.emptySubtitle, { color: theme.subtitle }]}>
-              This is your space for meaningful connections.
-            </Text>
-            <Text style={[styles.emptySubtitle, { color: theme.subtitle }]}>
-              Tap below to share your first thought.
-            </Text>
-          </View>
-        ) : (
-          // Posts list
-          <View style={styles.postsList}>
-            {posts.map((post) => (
-              <PostItem
-                key={post.id}
-                post={post}
-                theme={theme}
-                isExpanded={expandedPostId === post.id}
-                onToggleExpand={() => handleToggleExpand(post.id)}
-                onAddComment={(commentText) => handleAddComment(post.id, commentText)}
-              />
-            ))}
-          </View>
-        )}
-      </ScrollView>
-
-      {/* Floating 'Share Something' button */}
-      <TouchableOpacity
-        style={[styles.floatingButton, { backgroundColor: circle.color }]}
-        onPress={() => setIsModalVisible(true)}
-        activeOpacity={0.8}
-      >
-        <Text style={styles.floatingButtonText}>✏️ Share Something</Text>
-      </TouchableOpacity>
-
-      {/* Post creation modal */}
-      <PostCreationModal
-        visible={isModalVisible}
-        onClose={() => setIsModalVisible(false)}
-        onPost={handleCreatePost}
-        theme={theme}
-        circleName={circle.name}
-      />
+          {/* Post creation modal */}
+          <PostCreationModal
+            visible={isModalVisible}
+            onClose={() => setIsModalVisible(false)}
+            onPost={handleCreatePost}
+            theme={theme}
+            circleName={circle.name}
+          />
+        </>
+      )}
     </View>
   );
 }
@@ -273,6 +349,16 @@ const styles = StyleSheet.create({
     fontWeight: '300',
     letterSpacing: 1,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+  },
+  loadingText: {
+    fontSize: 16,
+    fontWeight: '300',
+  },
   feedContainer: {
     flex: 1,
   },
@@ -291,7 +377,7 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   emptyTitle: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: '300',
     textAlign: 'center',
     marginBottom: 16,
