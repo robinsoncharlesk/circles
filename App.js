@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import Home from './screens/Home';
 import CircleFeed from './screens/CircleFeed';
+import Settings from './screens/Settings';
 
 /**
  * CIRCLES - A Mindful Social Media App
@@ -123,6 +124,11 @@ export default function App() {
           {/* Circle feed screen - shows posts for a specific circle */}
           <Stack.Screen name="CircleFeed">
             {(props) => <CircleFeed {...props} theme={theme} />}
+          </Stack.Screen>
+
+          {/* Settings screen - user identity and preferences */}
+          <Stack.Screen name="Settings">
+            {(props) => <Settings {...props} theme={theme} />}
           </Stack.Screen>
         </Stack.Navigator>
       </NavigationContainer>

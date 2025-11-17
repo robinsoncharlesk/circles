@@ -66,3 +66,27 @@ export async function clearAllData() {
     console.error('Error clearing all data:', error);
   }
 }
+
+/**
+ * Save user's display name
+ */
+export async function saveDisplayName(name) {
+  try {
+    await AsyncStorage.setItem('@circles_display_name', name);
+  } catch (error) {
+    console.error('Error saving display name:', error);
+  }
+}
+
+/**
+ * Load user's display name
+ */
+export async function loadDisplayName() {
+  try {
+    const name = await AsyncStorage.getItem('@circles_display_name');
+    return name || 'You'; // Default to "You" if no name set
+  } catch (error) {
+    console.error('Error loading display name:', error);
+    return 'You';
+  }
+}

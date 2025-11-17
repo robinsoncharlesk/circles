@@ -154,6 +154,14 @@ export default function Home({ navigation, theme }) {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
+      {/* Settings Button */}
+      <TouchableOpacity
+        style={styles.settingsButton}
+        onPress={() => navigation.navigate('Settings', { theme })}
+      >
+        <Text style={[styles.settingsText, { color: theme.subtitle }]}>⚙️ Settings</Text>
+      </TouchableOpacity>
+
       {/* App Header */}
       <View style={styles.header}>
         <Text style={[styles.title, { color: theme.title }]}>Circles</Text>
@@ -215,6 +223,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingTop: 60,
+  },
+  settingsButton: {
+    position: 'absolute',
+    top: 60,
+    right: 20,
+    padding: 8,
+    zIndex: 10,
+  },
+  settingsText: {
+    fontSize: 14,
+    fontWeight: '500',
   },
   header: {
     alignItems: 'center',

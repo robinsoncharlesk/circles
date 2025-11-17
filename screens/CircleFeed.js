@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import PostCreationModal from '../components/PostCreationModal';
 import PostItem from '../components/PostItem';
-import { loadPosts, savePosts } from '../utils/storage';
+import { loadPosts, savePosts, loadDisplayName } from '../utils/storage';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -126,6 +126,18 @@ export default function CircleFeed({ route, navigation, theme }) {
   // State for tracking if posts have been loaded from storage
   const [isLoaded, setIsLoaded] = useState(false);
 
+  // State for user's display name
+  const [displayName, setDisplayName] = useState('You');
+
+  // Load display name when component mounts
+  useEffect(() => {
+    async function loadName() {
+      const name = await loadDisplayName();
+      setDisplayName(name);
+    }
+    loadName();
+  }, []);
+
   // Load posts from storage when component mounts
   useEffect(() => {
     async function loadStoredPosts() {
@@ -179,7 +191,7 @@ export default function CircleFeed({ route, navigation, theme }) {
       id: Date.now().toString(),
       text: commentText,
       timestamp: new Date().toISOString(),
-      author: 'You',
+      author: displayName,
     };
 
     setPosts(
@@ -280,6 +292,7 @@ export default function CircleFeed({ route, navigation, theme }) {
                     key={post.id}
                     post={post}
                     theme={theme}
+                    displayName={displayName}
                     isExpanded={expandedPostId === post.id}
                     onToggleExpand={() => handleToggleExpand(post.id)}
                     onAddComment={(commentText) =>

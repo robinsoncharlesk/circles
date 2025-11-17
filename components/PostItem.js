@@ -15,6 +15,7 @@ import CommentInput from './CommentInput';
 export default function PostItem({
   post,
   theme,
+  displayName,
   isExpanded,
   onToggleExpand,
   onAddComment,
@@ -31,7 +32,7 @@ export default function PostItem({
       >
         {/* Post header - author and time */}
         <View style={styles.header}>
-          <Text style={[styles.author, { color: theme.title }]}>You</Text>
+          <Text style={[styles.author, { color: theme.title }]}>{displayName}</Text>
           <Text style={[styles.separator, { color: theme.footer }]}>•</Text>
           <Text style={[styles.timestamp, { color: theme.footer }]}>
             {getRelativeTime(post.timestamp)}
