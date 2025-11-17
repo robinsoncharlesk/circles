@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { getRelativeTime } from '../utils/time';
 import Comment from './Comment';
 import CommentInput from './CommentInput';
+import PostOptionsMenu from './PostOptionsMenu';
 
 /**
  * POST ITEM
@@ -19,8 +20,11 @@ export default function PostItem({
   isExpanded,
   onToggleExpand,
   onAddComment,
+  onEdit,
+  onDelete,
 }) {
   const commentCount = post.comments?.length || 0;
+  const [isMenuVisible, setIsMenuVisible] = useState(false);
 
   return (
     <View style={styles.wrapper}>
@@ -32,11 +36,28 @@ export default function PostItem({
       >
         {/* Post header - author and time */}
         <View style={styles.header}>
-          <Text style={[styles.author, { color: theme.title }]}>{displayName}</Text>
-          <Text style={[styles.separator, { color: theme.footer }]}>•</Text>
-          <Text style={[styles.timestamp, { color: theme.footer }]}>
-            {getRelativeTime(post.timestamp)}
-          </Text>
+          <View style={styles.headerLeft}>
+            <Text style={[styles.author, { color: theme.title }]}>{displayName}</Text>
+            <Text style={[styles.separator, { color: theme.footer }]}>•</Text>
+            <Text style={[styles.timestamp, { color: theme.footer }]}>
+              {getRelativeTime(post.timestamp)}
+            </Text>
+            {post.editedAt && (
+              <Text style={[styles.editedLabel, { color: theme.footer }]}>
+                (edited)
+              </Text>
+            )}
+          </View>
+          <TouchableOpacity
+            style={styles.optionsButton}
+            onPress={(e) => {
+              e.stopPropagation();
+              setIsMenuVisible(true);
+            }}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Text style={[styles.optionsIcon, { color: theme.subtitle }]}>⋯</Text>
+          </TouchableOpacity>
         </View>
 
         {/* Post content */}
@@ -85,6 +106,15 @@ export default function PostItem({
           </TouchableOpacity>
         </View>
       )}
+
+      {/* Options menu for edit/delete */}
+      <PostOptionsMenu
+        visible={isMenuVisible}
+        onClose={() => setIsMenuVisible(false)}
+        onEdit={() => onEdit && onEdit(post)}
+        onDelete={() => onDelete && onDelete(post.id)}
+        theme={theme}
+      />
     </View>
   );
 }
@@ -105,7 +135,13 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 12,
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
   },
   author: {
     fontSize: 15,
@@ -118,6 +154,20 @@ const styles = StyleSheet.create({
   timestamp: {
     fontSize: 14,
     fontWeight: '300',
+  },
+  editedLabel: {
+    fontSize: 12,
+    fontWeight: '300',
+    marginLeft: 6,
+    fontStyle: 'italic',
+  },
+  optionsButton: {
+    padding: 4,
+  },
+  optionsIcon: {
+    fontSize: 20,
+    fontWeight: '700',
+    letterSpacing: 2,
   },
   content: {
     fontSize: 16,

@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import PostCreationModal from '../components/PostCreationModal';
 import PostItem from '../components/PostItem';
+import DeleteConfirmation from '../components/DeleteConfirmation';
 import { loadPosts, savePosts, loadDisplayName } from '../utils/storage';
 
 // Enable LayoutAnimation on Android
@@ -129,6 +130,12 @@ export default function CircleFeed({ route, navigation, theme }) {
   // State for user's display name
   const [displayName, setDisplayName] = useState('You');
 
+  // State for edit mode
+  const [editingPost, setEditingPost] = useState(null);
+
+  // State for delete confirmation
+  const [deletingPostId, setDeletingPostId] = useState(null);
+
   // Load display name when component mounts
   useEffect(() => {
     async function loadName() {
@@ -160,21 +167,38 @@ export default function CircleFeed({ route, navigation, theme }) {
     }
   }, [posts, circle.name, isLoaded]);
 
-  // Handle creating a new post with animation
+  // Handle creating a new post or updating an existing one
   const handleCreatePost = (text) => {
     // Configure smooth layout animation
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
 
-    const newPost = {
-      id: Date.now().toString(),
-      text: text,
-      timestamp: new Date().toISOString(),
-      author: 'You',
-      comments: [], // Initialize empty comments array
-    };
+    if (editingPost) {
+      // Editing existing post
+      setPosts(
+        posts.map((post) =>
+          post.id === editingPost.id
+            ? {
+                ...post,
+                text: text,
+                editedAt: new Date().toISOString(),
+              }
+            : post
+        )
+      );
+      setEditingPost(null);
+    } else {
+      // Creating new post
+      const newPost = {
+        id: Date.now().toString(),
+        text: text,
+        timestamp: new Date().toISOString(),
+        author: 'You',
+        comments: [], // Initialize empty comments array
+      };
 
-    // Add to beginning of posts array (newest first)
-    setPosts([newPost, ...posts]);
+      // Add to beginning of posts array (newest first)
+      setPosts([newPost, ...posts]);
+    }
   };
 
   // Handle toggling post expansion with animation
@@ -201,6 +225,18 @@ export default function CircleFeed({ route, navigation, theme }) {
           : post
       )
     );
+  };
+
+  // Handle initiating post edit
+  const handleEditPost = (post) => {
+    setEditingPost(post);
+    setIsModalVisible(true);
+  };
+
+  // Handle post deletion with animation
+  const handleDeletePost = (postId) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setPosts(posts.filter((post) => post.id !== postId));
   };
 
   const emptyMessage = getEmptyStateMessage(circle.name);
@@ -298,6 +334,8 @@ export default function CircleFeed({ route, navigation, theme }) {
                     onAddComment={(commentText) =>
                       handleAddComment(post.id, commentText)
                     }
+                    onEdit={handleEditPost}
+                    onDelete={() => setDeletingPostId(post.id)}
                   />
                 ))}
               </View>
@@ -307,7 +345,10 @@ export default function CircleFeed({ route, navigation, theme }) {
           {/* Floating 'Share Something' button */}
           <TouchableOpacity
             style={[styles.floatingButton, { backgroundColor: circle.color }]}
-            onPress={() => setIsModalVisible(true)}
+            onPress={() => {
+              setEditingPost(null);
+              setIsModalVisible(true);
+            }}
             activeOpacity={0.8}
           >
             <Text style={styles.floatingButtonText}>✏️ Share Something</Text>
@@ -316,10 +357,24 @@ export default function CircleFeed({ route, navigation, theme }) {
           {/* Post creation modal */}
           <PostCreationModal
             visible={isModalVisible}
-            onClose={() => setIsModalVisible(false)}
+            onClose={() => {
+              setIsModalVisible(false);
+              setEditingPost(null);
+            }}
             onPost={handleCreatePost}
             theme={theme}
             circleName={circle.name}
+            editMode={!!editingPost}
+            initialText={editingPost?.text || ''}
+          />
+
+          {/* Delete Confirmation */}
+          <DeleteConfirmation
+            visible={!!deletingPostId}
+            onClose={() => setDeletingPostId(null)}
+            onConfirm={() => handleDeletePost(deletingPostId)}
+            theme={theme}
+            type="post"
           />
         </>
       )}

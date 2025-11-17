@@ -20,9 +20,24 @@ import {
 
 const MAX_CHARACTERS = 280;
 
-export default function PostCreationModal({ visible, onClose, onPost, theme, circleName }) {
-  const [text, setText] = useState('');
+export default function PostCreationModal({
+  visible,
+  onClose,
+  onPost,
+  theme,
+  circleName,
+  editMode = false,
+  initialText = '',
+}) {
+  const [text, setText] = useState(initialText);
   const bubbleScale = useRef(new Animated.Value(1)).current;
+
+  // Update text when initialText changes (for edit mode)
+  useEffect(() => {
+    if (visible) {
+      setText(editMode ? initialText : '');
+    }
+  }, [visible, editMode, initialText]);
 
   // Calculate character count and percentage
   const charCount = text.length;
@@ -95,10 +110,10 @@ export default function PostCreationModal({ visible, onClose, onPost, theme, cir
           {/* Header */}
           <View style={styles.header}>
             <Text style={[styles.headerTitle, { color: theme.title }]}>
-              Share with {circleName}
+              {editMode ? 'Edit Post' : `Share with ${circleName}`}
             </Text>
             <Text style={[styles.headerSubtitle, { color: theme.subtitle }]}>
-              Write something meaningful
+              {editMode ? 'Update your thoughts' : 'Write something meaningful'}
             </Text>
           </View>
 
@@ -146,7 +161,9 @@ export default function PostCreationModal({ visible, onClose, onPost, theme, cir
                 activeOpacity={0.7}
                 disabled={text.trim().length === 0}
               >
-                <Text style={styles.shareButtonText}>Share</Text>
+                <Text style={styles.shareButtonText}>
+                  {editMode ? 'Save' : 'Share'}
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
