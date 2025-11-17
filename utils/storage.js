@@ -90,3 +90,27 @@ export async function loadDisplayName() {
     return 'You';
   }
 }
+
+/**
+ * Mark onboarding as complete
+ */
+export async function saveOnboardingComplete() {
+  try {
+    await AsyncStorage.setItem('@circles_onboarding_complete', 'true');
+  } catch (error) {
+    console.error('Error saving onboarding status:', error);
+  }
+}
+
+/**
+ * Check if onboarding has been completed
+ */
+export async function isOnboardingComplete() {
+  try {
+    const value = await AsyncStorage.getItem('@circles_onboarding_complete');
+    return value === 'true';
+  } catch (error) {
+    console.error('Error loading onboarding status:', error);
+    return false;
+  }
+}

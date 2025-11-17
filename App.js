@@ -1,11 +1,13 @@
-import React from 'react';
-import { StatusBar } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StatusBar, ActivityIndicator, View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import Home from './screens/Home';
 import CircleFeed from './screens/CircleFeed';
 import Settings from './screens/Settings';
+import Welcome from './screens/Welcome';
+import { isOnboardingComplete } from './utils/storage';
 
 /**
  * CIRCLES - A Mindful Social Media App
@@ -103,6 +105,44 @@ export default function App() {
   const timeOfDay = getTimeOfDay();
   const theme = COLOR_THEMES[timeOfDay];
 
+  // Track onboarding status
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(null);
+
+  // Check onboarding status on mount
+  useEffect(() => {
+    async function checkOnboarding() {
+      const completed = await isOnboardingComplete();
+      setHasCompletedOnboarding(completed);
+    }
+    checkOnboarding();
+  }, []);
+
+  // Handle onboarding completion
+  const handleOnboardingComplete = () => {
+    setHasCompletedOnboarding(true);
+  };
+
+  // Show loading spinner while checking onboarding status
+  if (hasCompletedOnboarding === null) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.background }}>
+        <StatusBar barStyle={theme.statusBar} />
+        <ActivityIndicator size="large" color={theme.title} />
+      </View>
+    );
+  }
+
+  // Show welcome screen if onboarding not complete
+  if (!hasCompletedOnboarding) {
+    return (
+      <>
+        <StatusBar barStyle={theme.statusBar} />
+        <Welcome onComplete={handleOnboardingComplete} theme={theme} />
+      </>
+    );
+  }
+
+  // Show main app if onboarding complete
   return (
     <>
       {/* StatusBar adapts to time of day */}
