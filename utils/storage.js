@@ -114,3 +114,57 @@ export async function isOnboardingComplete() {
     return false;
   }
 }
+
+/**
+ * Save the last time a user viewed a specific circle
+ */
+export async function saveLastViewed(circleName) {
+  try {
+    const key = `@circles_last_viewed_${circleName}`;
+    const timestamp = new Date().toISOString();
+    await AsyncStorage.setItem(key, timestamp);
+  } catch (error) {
+    console.error('Error saving last viewed timestamp:', error);
+  }
+}
+
+/**
+ * Get the last time a user viewed a specific circle
+ */
+export async function getLastViewed(circleName) {
+  try {
+    const key = `@circles_last_viewed_${circleName}`;
+    const timestamp = await AsyncStorage.getItem(key);
+    return timestamp ? new Date(timestamp) : null;
+  } catch (error) {
+    console.error('Error loading last viewed timestamp:', error);
+    return null;
+  }
+}
+
+/**
+ * Get unread post count for a specific circle
+ * Posts are "unread" if they were created after the last viewed timestamp
+ */
+export async function getUnreadCount(circleName) {
+  try {
+    const posts = await loadPosts(circleName);
+    const lastViewed = await getLastViewed(circleName);
+
+    if (!lastViewed) {
+      // Never viewed - all posts are "new"
+      return posts.length;
+    }
+
+    // Count posts created after last viewed time
+    const unreadPosts = posts.filter((post) => {
+      const postTime = new Date(post.timestamp);
+      return postTime > lastViewed;
+    });
+
+    return unreadPosts.length;
+  } catch (error) {
+    console.error('Error getting unread count:', error);
+    return 0;
+  }
+}

@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, Animated } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import OpenHangoutToggle from '../components/OpenHangoutToggle';
 import OpenHangoutModal from '../components/OpenHangoutModal';
+import UnreadBadge from '../components/UnreadBadge';
+import { getUnreadCount } from '../utils/storage';
 
 /**
  * HOME SCREEN
@@ -23,7 +26,7 @@ import OpenHangoutModal from '../components/OpenHangoutModal';
  * When Open Hangout is active for this circle, it gets a sparkle/glow.
  * This signals availability without the pressure of directly asking.
  */
-function BreathingCircle({ circle, delay, onPress, hangoutSettings, theme }) {
+function BreathingCircle({ circle, delay, onPress, hangoutSettings, theme, unreadCount }) {
   const breathAnim = useRef(new Animated.Value(1)).current;
   const glowAnim = useRef(new Animated.Value(0)).current;
 
@@ -126,6 +129,9 @@ function BreathingCircle({ circle, delay, onPress, hangoutSettings, theme }) {
         >
           <Text style={styles.emoji}>{circle.emoji}</Text>
           <Text style={styles.circleName}>{circle.name}</Text>
+
+          {/* Unread badge for new posts */}
+          <UnreadBadge count={unreadCount} theme={theme} />
         </TouchableOpacity>
       </Animated.View>
     </Animated.View>
@@ -144,6 +150,9 @@ export default function Home({ navigation, theme }) {
   // State for modal visibility
   const [isModalVisible, setIsModalVisible] = useState(false);
 
+  // State for unread counts per circle
+  const [unreadCounts, setUnreadCounts] = useState({});
+
   const handleSaveHangoutSettings = (settings) => {
     setHangoutSettings(settings);
   };
@@ -151,6 +160,21 @@ export default function Home({ navigation, theme }) {
   const handleOpenModal = () => {
     setIsModalVisible(true);
   };
+
+  // Load unread counts when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      async function loadUnreadCounts() {
+        const counts = {};
+        for (const circle of circles) {
+          const count = await getUnreadCount(circle.name);
+          counts[circle.name] = count;
+        }
+        setUnreadCounts(counts);
+      }
+      loadUnreadCounts();
+    }, [circles])
+  );
 
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
@@ -170,6 +194,32 @@ export default function Home({ navigation, theme }) {
         </Text>
       </View>
 
+      {/* Gentle notification banner */}
+      {(() => {
+        const totalUnread = Object.values(unreadCounts).reduce((sum, count) => sum + count, 0);
+        if (totalUnread === 0) return null;
+
+        // Create a gentle message about new posts
+        const circlesWithUnread = Object.entries(unreadCounts)
+          .filter(([_, count]) => count > 0)
+          .map(([name, count]) => `${count} in ${name}`)
+          .slice(0, 2); // Show max 2 circles
+
+        const message = circlesWithUnread.length === 1
+          ? `${circlesWithUnread[0]}`
+          : circlesWithUnread.length === 2
+          ? `${circlesWithUnread[0]}, ${circlesWithUnread[1]}`
+          : `${totalUnread} new thoughts`;
+
+        return (
+          <View style={[styles.notificationBanner, { backgroundColor: theme.selectedBg }]}>
+            <Text style={[styles.notificationText, { color: theme.subtitle }]}>
+              ✨ {message} {circlesWithUnread.length > 1 ? 'new thoughts' : 'new thought'}
+            </Text>
+          </View>
+        );
+      })()}
+
       {/* The main circles display */}
       <View style={styles.circlesContainer}>
         <Text style={[styles.prompt, { color: theme.prompt }]}>
@@ -187,6 +237,7 @@ export default function Home({ navigation, theme }) {
               }
               hangoutSettings={hangoutSettings}
               theme={theme}
+              unreadCount={unreadCounts[circle.name] || 0}
             />
           ))}
         </View>
@@ -248,6 +299,22 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginTop: 8,
     fontWeight: '300',
+  },
+  notificationBanner: {
+    marginHorizontal: 20,
+    marginBottom: 20,
+    padding: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  notificationText: {
+    fontSize: 14,
+    fontWeight: '400',
   },
   circlesContainer: {
     flex: 1,

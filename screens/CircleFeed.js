@@ -14,7 +14,7 @@ import {
 import PostCreationModal from '../components/PostCreationModal';
 import PostItem from '../components/PostItem';
 import DeleteConfirmation from '../components/DeleteConfirmation';
-import { loadPosts, savePosts, loadDisplayName } from '../utils/storage';
+import { loadPosts, savePosts, loadDisplayName, saveLastViewed } from '../utils/storage';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -144,6 +144,11 @@ export default function CircleFeed({ route, navigation, theme }) {
     }
     loadName();
   }, []);
+
+  // Mark circle as viewed when user enters (for unread tracking)
+  useEffect(() => {
+    saveLastViewed(circle.name);
+  }, [circle.name]);
 
   // Load posts from storage when component mounts
   useEffect(() => {
